@@ -12,5 +12,5 @@ import lombok.Setter;
 public class Staff extends AppUser {
 
     private String role;
-    private String officeNumber;
+    private String office_number;
 }

@@ -18,7 +18,7 @@ public class Payment {
     private Long id;
 
     private Double amount;
-    private LocalDate paymentDate;
+    private LocalDate payment_date;
 
     @ManyToOne
     @JoinColumn(name = "booking_id", nullable = false)
