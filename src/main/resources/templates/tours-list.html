@@ -1,0 +1,77 @@
+<div th:fragment="content" class="space-y-6 animate-fade-in">
+
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-base-content">Správa zájezdů</h1>
+        <button class="btn btn-primary" onclick="addTourModal.showModal()">+ Přidat zájezd</button>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-box shadow">
+        <table class="table table-zebra w-full">
+            <thead class="bg-base-200 text-base-content text-sm">
+            <tr>
+                <th>ID</th>
+                <th>Název</th>
+                <th>Destinace</th>
+                <th>Cena</th>
+                <th>Kapacita</th>
+                <th>Akce</th>
+            </tr>
+            </thead>
+            <tbody id="tour-table-body">
+            <tr th:each="t : ${tours}" th:id="'tour-' + ${t.tour_id}" th:fragment="tour-row">
+                <th th:text="${t.tour_id}">1</th>
+                <td th:text="${t.tour_name}" class="font-semibold"></td>
+                <td th:text="${t.destination != null ? t.destination.destinace_nazev : '-'}"></td>
+                <td th:text="${t.price_person} + ' Kč'"></td>
+                <td>
+                    <div class="badge badge-neutral" th:text="${t.capacity}"></div>
+                </td>
+                <td>
+                    <button th:hx-delete="'/tours/' + ${t.tour_id}"
+                            th:hx-target="'#tour-' + ${t.tour_id}"
+                            hx-swap="outerHTML"
+                            hx-confirm="Opravdu smazat?"
+                            class="btn btn-error btn-xs">Smazat</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <dialog id="addTourModal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Nový zájezd</h3>
+
+            <form hx-post="/tours"
+                  hx-target="#tour-table-body"
+                  hx-swap="beforeend"
+                  hx-on::after-request="addTourModal.close(); this.reset()">
+
+                <div class="form-control w-full mb-2">
+                    <label class="label"><span class="label-text">Název zájezdu</span></label>
+                    <input type="text" name="tour_name" class="input input-bordered w-full" required />
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text">Cena</span></label>
+                        <input type="number" step="0.01" name="price_person" class="input input-bordered w-full" required />
+                    </div>
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text">Max. kapacita</span></label>
+                        <input type="number" name="capacity" class="input input-bordered w-full" required />
+                    </div>
+                </div>
+
+                <div class="modal-action">
+                    <button type="button" class="btn" onclick="addTourModal.close()">Zrušit</button>
+                    <button type="submit" class="btn btn-primary">Uložit</button>
+                </div>
+            </form>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+
+</div>
