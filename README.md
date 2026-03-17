@@ -1,2 +1,1 @@
-# mnsck
-KIV/MNS semestrální práce 2026
+ # KIV/MNS semestrální práce 2026
