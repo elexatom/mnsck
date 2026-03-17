@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "BOOKING")
@@ -26,8 +28,10 @@ public class Booking {
     private Tour tour;
 
     private LocalDate orderDate;
-    private LocalDate paidDate;
     private String status;
     private Integer persons_qty;
     private Integer persons_reduced_qty;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments = new ArrayList<>();
 }

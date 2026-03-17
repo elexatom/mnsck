@@ -1,6 +1,6 @@
 package cz.zcu.kiv.elexa.mnsck.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,8 +9,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Customer extends AppUser {
+public class Staff extends AppUser {
 
-    private String phone_number;
-    private String bank_account_number;
+    private String role;
+    private String officeNumber;
 }
