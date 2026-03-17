@@ -31,7 +31,7 @@ public class Booking {
     @JoinColumn(name = "tour_id", nullable = false)
     private Tour tour;
 
-    private LocalDate orderDate;
+    private LocalDate order_date;
     private Integer persons_qty;
     private Integer persons_reduced_qty;
 
@@ -39,16 +39,16 @@ public class Booking {
     private List<Payment> payments = new ArrayList<>();
 
     @Column(name = "status")
-    private String statusString;
+    private String status_string;
 
     @Transient
     private BookingState currentStatus;
 
     @PostLoad
     private void init() {
-        if ("PAID".equals(statusString)) {
+        if ("PAID".equals(status_string)) {
             this.currentStatus = new PaidState();
-        } else if ("CANCELLED".equals(statusString)) {
+        } else if ("CANCELLED".equals(status_string)) {
             this.currentStatus = new CancelledState();
         } else {
             this.currentStatus = new WaitingForPaymentState();
@@ -62,7 +62,7 @@ public class Booking {
             this.currentStatus = new WaitingForPaymentState();
         }
 
-        this.statusString = this.currentStatus.getStateName();
+        this.status_string = this.currentStatus.getStateName();
     }
 
     public void pay(double amount) {
@@ -77,6 +77,6 @@ public class Booking {
 
    public void setStatus(BookingState status) {
         this.currentStatus = status;
-        this.statusString = status.getStateName();
+        this.status_string = status.getStateName();
    }
 }
