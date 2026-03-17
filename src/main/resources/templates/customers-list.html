@@ -1,0 +1,86 @@
+<div th:fragment="content" class="space-y-6 animate-fade-in" xmlns:hx-on="http://www.w3.org/1999/xhtml">
+
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-base-content">Evidence zákazníků</h1>
+        <button class="btn btn-primary" onclick="addCustomerModal.showModal()">+ Přidat zákazníka</button>
+    </div>
+
+    <div th:fragment="customer-table" id="customer-table-container"
+         class="overflow-x-auto bg-base-100 rounded-box shadow">
+        <table class="table table-zebra w-full">
+            <thead class="bg-base-200 text-base-content">
+            <tr>
+                <th>ID</th>
+                <th>Jméno a Příjmení</th>
+                <th>E-mail</th>
+                <th>Telefon</th>
+                <th>VIP</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${customers}">
+                <th th:text="${c.id}">1</th>
+                <td class="font-semibold" th:text="${c.name} + ' ' + ${c.surname}">Jan Novák</td>
+                <td th:text="${c.email}">jan@novak.cz</td>
+                <td th:text="${c.phone_number}">123456789</td>
+                <td>
+                    <div th:if="${c.is_vip}" class="badge badge-accent">VIP</div>
+                    <div th:unless="${c.is_vip}" class="badge badge-ghost">Běžný</div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(customers)}">
+                <td colspan="5" class="text-center py-4 text-gray-500">Zatím nejsou evidováni žádní zákazníci.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <dialog id="addCustomerModal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Nový zákazník</h3>
+
+            <form hx-on::after-request="addCustomerModal.close(); this.reset()"
+                  hx-post="/customers"
+                  hx-swap="outerHTML"
+                  hx-target="#customer-table-container">
+
+                <div class="grid grid-cols-2 gap-4 mb-2">
+                    <div class="form-control w-full">
+                        <label for="in1cust" class="label"><span class="label-text">Jméno</span></label>
+                        <input id="in1cust" type="text" name="name" class="input input-bordered w-full" required/>
+                    </div>
+                    <div class="form-control w-full">
+                        <label for="in2cust"><span class="label-text">Příjmení</span></label>
+                        <input id="in2cust" type="text" name="surname" class="input input-bordered w-full" required/>
+                    </div>
+                </div>
+
+                <div class="form-control w-full mb-2">
+                    <label for="in3cust" class="label"><span class="label-text">E-mail</span></label>
+                    <input id="in3cust" type="email" name="email" class="input input-bordered w-full" required/>
+                </div>
+
+                <div class="form-control w-full mb-4">
+                    <label for="in4cust" class="label"><span class="label-text">Telefon</span></label>
+                    <input id="in4cust" type="text" name="phone_number" class="input input-bordered w-full"/>
+                </div>
+
+                <div class="form-control w-full mb-6">
+                    <label class="cursor-pointer label justify-start gap-4">
+                        <input type="checkbox" name="is_vip" class="checkbox checkbox-accent"/>
+                        <span class="label-text">VIP Zákazník (nárok na slevy)</span>
+                    </label>
+                </div>
+
+                <div class="modal-action">
+                    <button type="button" class="btn" onclick="addCustomerModal.close()">Zrušit</button>
+                    <button type="submit" class="btn btn-primary">Uložit zákazníka</button>
+                </div>
+            </form>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>Zavřít</button>
+        </form>
+    </dialog>
+
+</div>
