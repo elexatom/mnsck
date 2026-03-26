@@ -1,9 +1,7 @@
 package cz.zcu.kiv.elexa.mnsck.entity;
 
-import cz.zcu.kiv.elexa.mnsck.state.BookingState;
-import cz.zcu.kiv.elexa.mnsck.state.CancelledState;
-import cz.zcu.kiv.elexa.mnsck.state.PaidState;
-import cz.zcu.kiv.elexa.mnsck.state.WaitingForPaymentState;
+import cz.zcu.kiv.elexa.mnsck.state.*;
+import cz.zcu.kiv.elexa.mnsck.strategy.DiscountStrategy;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,6 +32,10 @@ public class Booking {
     private LocalDate order_date;
     private Integer persons_qty;
     private Integer persons_reduced_qty;
+    private Double total_price;
+
+    @Transient
+    private DiscountStrategy discount_strategy;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments = new ArrayList<>();
@@ -42,41 +44,52 @@ public class Booking {
     private String status_string;
 
     @Transient
-    private BookingState currentStatus;
+    private BookingState current_status;
 
     @PostLoad
     private void init() {
-        if ("PAID".equals(status_string)) {
-            this.currentStatus = new PaidState();
-        } else if ("CANCELLED".equals(status_string)) {
-            this.currentStatus = new CancelledState();
-        } else {
-            this.currentStatus = new WaitingForPaymentState();
+        switch (status_string) {
+            case "PAID" -> this.current_status = new PaidState();
+            case "CANCELLED" -> this.current_status = new CancelledState();
+            case "PARTIALLY_PAID" -> this.current_status = new PartiallyPaidState();
+            case null, default -> this.current_status = new WaitingForPaymentState();
         }
     }
 
     @PrePersist
     @PreUpdate
     private void syncStatus() {
-        if (this.currentStatus == null) {
-            this.currentStatus = new WaitingForPaymentState();
+        if (this.current_status == null) {
+            this.current_status = new WaitingForPaymentState();
         }
 
-        this.status_string = this.currentStatus.getStateName();
+        this.status_string = this.current_status.getStateName();
     }
 
     public void pay(double amount) {
-        if (this.currentStatus == null) this.currentStatus = new WaitingForPaymentState();
-        this.currentStatus.pay(this, amount);
+        Payment newPayment = new Payment();
+        newPayment.setAmount(amount);
+        newPayment.setPayment_date(LocalDate.now());
+        newPayment.setBooking(this);
+        this.payments.add(newPayment);
+
+        // delegate handling to State Pattern
+        if (this.current_status == null) this.current_status = new WaitingForPaymentState();
+        this.current_status.pay(this, amount);
     }
 
     public void cancel() {
-        if (this.currentStatus == null) this.currentStatus = new WaitingForPaymentState();
-        this.currentStatus.cancel(this);
+        if (this.current_status == null) this.current_status = new WaitingForPaymentState();
+        this.current_status.cancel(this);
     }
 
-   public void setStatus(BookingState status) {
-        this.currentStatus = status;
+    public void setStatus(BookingState status) {
+        this.current_status = status;
         this.status_string = status.getStateName();
-   }
+    }
+
+    public double getAmountPaid() {
+        if (this.payments == null) return 0.0;
+        return this.payments.stream().mapToDouble(Payment::getAmount).sum();
+    }
 }

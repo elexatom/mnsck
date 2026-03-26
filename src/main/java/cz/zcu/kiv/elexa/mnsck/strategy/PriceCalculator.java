@@ -12,6 +12,10 @@ public class PriceCalculator {
         this.discountStrategy = discountStrategy;
     }
 
+    public DiscountStrategy getDiscountStrategy() {
+        return this.discountStrategy;
+    }
+
     public double calculateFinal(double basePrice) {
         if (this.discountStrategy == null) {
             throw new IllegalStateException("Strategie nebyla nastavena!");

@@ -2,7 +2,6 @@ package cz.zcu.kiv.elexa.mnsck.controller;
 
 import cz.zcu.kiv.elexa.mnsck.entity.Customer;
 import cz.zcu.kiv.elexa.mnsck.repository.CustomerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
