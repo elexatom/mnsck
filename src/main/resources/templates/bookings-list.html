@@ -1,0 +1,144 @@
+<div th:fragment="content" class="space-y-6 animate-fade-in">
+
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-base-content">Správa rezervací</h1>
+        <button class="btn btn-primary" onclick="addBookingModal.showModal()">+ Nová rezervace</button>
+    </div>
+
+    <div th:fragment="booking-table" id="booking-table-container"
+         class="overflow-x-auto bg-base-100 rounded-box shadow relative">
+
+        <div id="toast-container" class="toast toast-top toast-end z-[9999]">
+            <div th:if="${errorMessage}" class="alert alert-error text-white shadow-lg" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <div th:if="${successMessage}" class="alert alert-success text-white shadow-lg" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span th:text="${successMessage}"></span>
+            </div>
+        </div>
+
+        <script th:if="${errorMessage != null or successMessage != null}">
+            setTimeout(() => {
+                const toast = document.getElementById('toast-container');
+                if (toast) toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast) toast.style.display = 'none';
+                }, 500);
+            }, 3500);
+        </script>
+
+        <table class="table table-zebra w-full text-sm">
+            <thead class="bg-base-200 text-base-content">
+            <tr>
+                <th>ID</th>
+                <th>Zákazník</th>
+                <th>Zájezd</th>
+                <th>Osob (Plná/Snížená)</th>
+                <th>Stav</th>
+                <th>Akce</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="b : ${bookings}">
+                <th th:text="${b.id}">1</th>
+                <td class="font-bold" th:text="${b.customer.surname} + ' ' + ${b.customer.name}"></td>
+                <td th:text="${b.tour.tour_name}"></td>
+                <td th:text="${b.persons_qty} + ' / ' + ${b.persons_reduced_qty}"></td>
+
+                <td>
+                    <div th:if="${b.status_string == 'WAITING_FOR_PAYMENT'}" class="badge badge-warning">Čeká na platbu</div>
+                    <div th:if="${b.status_string == 'PAID'}" class="badge badge-success text-white">Zaplaceno</div>
+                    <div th:if="${b.status_string == 'PARTIALLY_PAID'}" class="badge badge-info text-white">Částečně zaplaceno</div>
+                    <div th:if="${b.status_string == 'CANCELLED'}" class="badge badge-error text-white">Stornováno</div>
+                </td>
+
+                <td class="flex gap-2 items-center">
+
+                    <form th:if="${b.status_string == 'WAITING_FOR_PAYMENT' or b.status_string == 'PARTIALLY_PAID'}"
+                          th:hx-post="'/bookings/' + ${b.id} + '/pay'"
+                          hx-target="#booking-table-container"
+                          hx-swap="outerHTML"
+                          class="flex gap-1">
+
+                        <input type="number" step="0.01" name="amount" class="input input-bordered input-xs w-20"
+                               placeholder="Částka" required>
+                        <button type="submit" class="btn btn-success btn-xs text-white">Zaplatit</button>
+                    </form>
+
+                    <button th:if="${b.status_string != 'CANCELLED'}"
+                            th:hx-post="'/bookings/' + ${b.id} + '/cancel'"
+                            hx-target="#booking-table-container"
+                            hx-swap="outerHTML"
+                            hx-confirm="Opravdu chcete rezervaci stornovat?"
+                            class="btn btn-error btn-xs text-white">Stornovat
+                    </button>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(bookings)}">
+                <td colspan="6" class="text-center py-4 text-gray-500">Zatím nebyly vytvořeny žádné rezervace.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <dialog id="addBookingModal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Vytvořit rezervaci</h3>
+
+            <form hx-post="/bookings"
+                  hx-target="#booking-table-container"
+                  hx-swap="outerHTML"
+                  hx-on::after-request="addBookingModal.close(); this.reset()">
+
+                <div class="form-control w-full mb-2">
+                    <label class="label"><span class="label-text">Vyberte zákazníka</span></label>
+                    <select name="customerId" class="select select-bordered w-full" required>
+                        <option value="" disabled selected>Zvolte zákazníka...</option>
+                        <option th:each="c : ${customers}" th:value="${c.id}"
+                                th:text="${c.surname} + ' ' + ${c.name}"></option>
+                    </select>
+                </div>
+
+                <div class="form-control w-full mb-4">
+                    <label class="label"><span class="label-text">Vyberte zájezd</span></label>
+                    <select name="tourId" class="select select-bordered w-full" required>
+                        <option value="" disabled selected>Zvolte zájezd...</option>
+                        <option th:each="t : ${tours}" th:value="${t.tour_id}"
+                                th:text="${t.tour_name} + ' (' + ${t.price_person} + ' Kč)'"></option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text">Počet dospělých</span></label>
+                        <input type="number" name="persons_qty" class="input input-bordered w-full" min="0" value="1" required />
+                    </div>
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text">Počet dětí / seniorů</span></label>
+                        <input type="number" name="persons_reduced_qty" class="input input-bordered w-full" min="0" value="0" required />
+                    </div>
+                </div>
+
+                <div class="modal-action">
+                    <button type="button" class="btn" onclick="addBookingModal.close()">Zrušit</button>
+                    <button type="submit" class="btn btn-primary">Rezervovat</button>
+                </div>
+            </form>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>Zavřít</button>
+        </form>
+    </dialog>
+
+</div>
