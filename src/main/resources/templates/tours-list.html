@@ -1,4 +1,4 @@
-<div th:fragment="content" class="space-y-6 animate-fade-in">
+<div th:fragment="content" class="space-y-6 animate-fade-in bg-base-100 text-base-content">
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-base-content">Správa zájezdů</h1>
@@ -26,7 +26,7 @@
                 <td th:text="${t.start_date} + ' až ' + ${t.end_date}"></td>
                 <td>
                     <span th:text="${t.price_person} + ' Kč'"></span> /
-                    <span class="text-gray-500" th:text="${t.price_person_reduced} + ' Kč'"></span>
+                    <span class="text-base-content/70" th:text="${t.price_person_reduced} + ' Kč'"></span>
                 </td>
                 <td><div class="badge badge-neutral" th:text="${t.capacity}"></div></td>
                 <td th:text="${t.destination?.name}"></td>
@@ -34,14 +34,14 @@
                 <td th:text="${t.guide != null ? t.guide.surname : '-'}"></td>
             </tr>
             <tr th:if="${#lists.isEmpty(tours)}">
-                <td colspan="8" class="text-center py-4 text-gray-500">Zatím nejsou vypsány žádné zájezdy.</td>
+                <td colspan="8" class="text-center py-4 text-base-content/60">Zatím nejsou vypsány žádné zájezdy.</td>
             </tr>
             </tbody>
         </table>
     </div>
 
     <dialog id="addTourModal" class="modal">
-        <div class="modal-box w-11/12 max-w-3xl">
+        <div class="modal-box w-11/12 max-w-3xl bg-base-100 text-base-content">
             <h3 class="font-bold text-lg mb-4">Vypsat nový zájezd</h3>
 
             <form hx-post="/tours"

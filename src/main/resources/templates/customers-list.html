@@ -1,4 +1,4 @@
-<div th:fragment="content" class="space-y-6 animate-fade-in" xmlns:hx-on="http://www.w3.org/1999/xhtml">
+<div th:fragment="content" class="space-y-6 animate-fade-in text-base-content" xmlns:hx-on="http://www.w3.org/1999/xhtml">
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-base-content">Evidence zákazníků</h1>
@@ -29,7 +29,7 @@
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(customers)}">
-                <td colspan="5" class="text-center py-4 text-gray-500">Zatím nejsou evidováni žádní zákazníci.</td>
+                <td colspan="5" class="text-center py-4 text-base-content/60">Zatím nejsou evidováni žádní zákazníci.</td>
             </tr>
             </tbody>
         </table>
