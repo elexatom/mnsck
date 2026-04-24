@@ -1,43 +1,100 @@
 <div th:fragment="content" class="space-y-6 animate-fade-in bg-base-100 text-base-content">
-
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-base-content">Správa zájezdů</h1>
-        <button class="btn btn-primary" onclick="addTourModal.showModal()">+ Přidat zájezd</button>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-5 rounded-box bg-base-200">
+        <div>
+            <h1 class="text-3xl font-bold">Zájezdy</h1>
+            <p class="text-sm text-base-content/70">Přehled zájezdů a jejich správa.</p>
+        </div>
+        <button class="btn btn-primary rounded-lg" onclick="addTourModal.showModal()">+ Přidat zájezd</button>
     </div>
 
-    <div th:fragment="tour-table" id="tour-table-container" class="overflow-x-auto bg-base-100 rounded-box shadow">
-        <table class="table table-zebra w-full text-sm">
-            <thead class="bg-base-200 text-base-content">
-            <tr>
-                <th>ID</th>
-                <th>Název</th>
-                <th>Termín</th>
-                <th>Cena (Plná / Snížená)</th>
-                <th>Kapacita</th>
-                <th>Destinace</th>
-                <th>Doprava</th>
-                <th>Průvodce</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="t : ${tours}">
-                <th th:text="${t.tour_id}">1</th>
-                <td class="font-bold" th:text="${t.tour_name}"></td>
-                <td th:text="${t.start_date} + ' až ' + ${t.end_date}"></td>
-                <td>
-                    <span th:text="${t.price_person} + ' Kč'"></span> /
-                    <span class="text-base-content/70" th:text="${t.price_person_reduced} + ' Kč'"></span>
-                </td>
-                <td><div class="badge badge-neutral" th:text="${t.capacity}"></div></td>
-                <td th:text="${t.destination?.name}"></td>
-                <td th:text="${t.transport?.type}"></td>
-                <td th:text="${t.guide != null ? t.guide.surname : '-'}"></td>
-            </tr>
-            <tr th:if="${#lists.isEmpty(tours)}">
-                <td colspan="8" class="text-center py-4 text-base-content/60">Zatím nejsou vypsány žádné zájezdy.</td>
-            </tr>
-            </tbody>
-        </table>
+    <div th:fragment="tour-table" id="tour-table-container">
+        <div class="overflow-x-auto bg-base-100 rounded-box shadow">
+            <table class="table table-zebra w-full text-sm">
+                <thead class="bg-base-200 text-base-content">
+                <tr>
+                    <th>ID</th>
+                    <th>Název</th>
+                    <th>Obsazenost</th>
+                    <th>Termín</th>
+                    <th>Akce</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="t : ${tours}" th:with="occupied=${occupiedByTourId[t.tour_id] ?: 0}">
+                    <th th:text="${t.tour_id}">1</th>
+                    <td class="font-bold" th:text="${t.tour_name}"></td>
+                    <td>
+                        <div class="badge badge-primary text-white" th:text="${occupied} + ' / ' + ${t.capacity}">0 / 0</div>
+                    </td>
+                    <td th:text="${t.start_date} + ' až ' + ${t.end_date}"></td>
+                    <td class="flex gap-2">
+                        <button type="button" class="btn btn-outline btn-xs"
+                                th:onclick="'document.getElementById(\'tourDetailModal-' + ${t.tour_id} + '\').showModal()'">
+                            Detail
+                        </button>
+                        <a class="btn btn-primary btn-xs"
+                           th:hx-get="@{/bookings(tourId=${t.tour_id})}"
+                           hx-target="#main-content"
+                           hx-push-url="true">
+                            Vytvořit rezervaci
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(tours)}">
+                    <td colspan="4" class="text-center py-4 text-base-content/60">Zatím nejsou vypsány žádné zájezdy.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Detail Modals included in the HTMX swap -->
+        <th:block th:each="t : ${tours}">
+            <dialog th:id="'tourDetailModal-' + ${t.tour_id}" class="modal">
+                <div class="modal-box w-11/12 max-w-2xl bg-base-100 text-base-content">
+                    <h3 class="font-bold text-lg mb-3">Detail zájezdu #<span th:text="${t.tour_id}">1</span> - <span
+                            th:text="${t.tour_name}"></span></h3>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="bg-base-200 rounded-lg p-3">
+                            <div class="text-base-content/70">Destinace / stát</div>
+                            <div class="font-semibold" th:text="${(t.destination?.destination_name ?: '-') + (t.destination?.destination_country != null ? ' (' + t.destination.destination_country + ')' : '')}">-</div>
+                        </div>
+                        <div class="bg-base-200 rounded-lg p-3">
+                            <div class="text-base-content/70">Doprava</div>
+                            <div class="font-semibold" th:text="${t.transport?.type ?: '-'}">-</div>
+                        </div>
+                        <div class="bg-base-200 rounded-lg p-3">
+                            <div class="text-base-content/70">Průvodce</div>
+                            <div class="font-semibold"
+                                 th:text="${t.guide != null ? t.guide.name + ' ' + t.guide.surname : '-'}">
+                                -
+                            </div>
+                        </div>
+                        <div class="bg-base-200 rounded-lg p-3">
+                            <div class="text-base-content/70">Jazyky průvodce</div>
+                            <div class="font-semibold" th:text="${t.guide != null ? t.guide.language1.lang_name : '-'}">-</div>
+                            <span th:text="${t.guide != null && t.guide.language2 != null ? t.guide.language2.lang_name : '-'}">-</span>
+
+                        </div>
+                        <div class="bg-base-200 rounded-lg p-3 col-span-2">
+                            <div class="text-base-content/70">Cena (plná / zvýhodněná)</div>
+                            <div class="font-semibold">
+                                <span th:text="${#numbers.formatDecimal(t.price_person, 1, 2)} + ' Kč'"></span>
+                                /
+                                <span th:text="${#numbers.formatDecimal(t.price_person_reduced, 1, 2)} + ' Kč'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-action">
+                        <form method="dialog">
+                            <button class="btn bg-red-500 text-white">Zavřít</button>
+                        </form>
+                    </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>Zavřít</button>
+                </form>
+            </dialog>
+        </th:block>
     </div>
 
     <dialog id="addTourModal" class="modal">
@@ -51,32 +108,34 @@
 
                 <div class="form-control w-full mb-2">
                     <label class="label"><span class="label-text">Název zájezdu</span></label>
-                    <input type="text" name="tour_name" class="input input-bordered w-full" required />
+                    <input type="text" name="tour_name" class="input input-bordered w-full" required/>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mb-2">
                     <div class="form-control w-full">
                         <label class="label"><span class="label-text">Od</span></label>
-                        <input type="date" name="start_date" class="input input-bordered w-full" required />
+                        <input type="date" name="start_date" class="input input-bordered w-full" required/>
                     </div>
                     <div class="form-control w-full">
                         <label class="label"><span class="label-text">Do</span></label>
-                        <input type="date" name="end_date" class="input input-bordered w-full" required />
+                        <input type="date" name="end_date" class="input input-bordered w-full" required/>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-4 mb-2">
                     <div class="form-control w-full">
                         <label class="label"><span class="label-text">Cena (Plná)</span></label>
-                        <input type="number" step="0.01" name="price_person" class="input input-bordered w-full" required />
+                        <input type="number" step="0.01" name="price_person" class="input input-bordered w-full"
+                               required/>
                     </div>
                     <div class="form-control w-full">
                         <label class="label"><span class="label-text">Cena (Snížená)</span></label>
-                        <input type="number" step="0.01" name="price_person_reduced" class="input input-bordered w-full" required />
+                        <input type="number" step="0.01" name="price_person_reduced" class="input input-bordered w-full"
+                               required/>
                     </div>
                     <div class="form-control w-full">
                         <label class="label"><span class="label-text">Kapacita</span></label>
-                        <input type="number" name="capacity" class="input input-bordered w-full" required />
+                        <input type="number" name="capacity" class="input input-bordered w-full" required/>
                     </div>
                 </div>
 
@@ -85,7 +144,8 @@
                         <label class="label"><span class="label-text">Destinace</span></label>
                         <select name="destination" class="select select-bordered w-full">
                             <option value="">(Nevybráno)</option>
-                            <option th:each="d : ${destinations}" th:value="${d.id}" th:text="${d.name}"></option>
+                            <option th:each="d : ${destinations}" th:value="${d.destination_id}"
+                                    th:text="${d.destination_name}"></option>
                         </select>
                     </div>
                     <div class="form-control w-full">
@@ -99,7 +159,7 @@
                         <label class="label"><span class="label-text">Průvodce</span></label>
                         <select name="guide" class="select select-bordered w-full">
                             <option value="">(Bez průvodce)</option>
-                            <option th:each="g : ${guides}" th:value="${g.id}" th:text="${g.surname}"></option>
+                            <option th:each="g : ${guides}" th:value="${g.guide_id}" th:text="${g.surname}"></option>
                         </select>
                     </div>
                 </div>
@@ -110,7 +170,9 @@
                 </div>
             </form>
         </div>
-        <form method="dialog" class="modal-backdrop"><button>Zavřít</button></form>
+        <form method="dialog" class="modal-backdrop">
+            <button>Zavřít</button>
+        </form>
     </dialog>
 
 </div>

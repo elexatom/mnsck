@@ -1,13 +1,84 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="cs" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <title>CK Informační systém</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-base-100 text-base-content min-h-screen">
+<div th:fragment="content" class="space-y-6 animate-fade-in text-base-content">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-5 rounded-box bg-base-200">
+        <div>
+            <h1 class="text-3xl font-bold">Dashboard</h1>
+            <p class="text-sm text-base-content/70">Rychlý přehled aktuálního stavu cestovní kanceláře.</p>
+        </div>
+    </div>
 
-</body>
-</html>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="stat bg-base-100 rounded-box shadow">
+            <div class="stat-title">Aktivní zájezdy</div>
+            <div th:text="${tourCount}" class="stat-value text-primary"></div>
+        </div>
+        <div class="stat bg-base-100 rounded-box shadow">
+            <div class="stat-title">Rezervace</div>
+            <div th:text="${bookingCount}" class="stat-value text-primary"></div>
+        </div>
+        <div class="stat bg-base-100 rounded-box shadow">
+            <div class="stat-title">Průměrná obsazenost</div>
+            <div th:text="${averageOccupancy}" class="stat-value text-accent"></div>
+        </div>
+        <div class="stat bg-base-100 rounded-box shadow">
+            <div class="stat-title">Čeká na platbu</div>
+            <div th:text="${waitingPaymentCount}" class="stat-value text-warning"></div>
+        </div>
+    </div>
+
+    <div class="p-6 bg-base-100 rounded-box shadow">
+        <h2 class="text-xl font-bold mb-4">Přehled plateb</h2>
+        <div class="h-[300px] w-full">
+            <canvas id="paymentChart"></canvas>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        (function() {
+            const ctx = document.getElementById('paymentChart');
+            if (!ctx) return;
+            
+            // Handle HTMX content swap - destroy old chart if it exists
+            if (window.myPaymentChart) {
+                window.myPaymentChart.destroy();
+            }
+
+            window.myPaymentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: /*[[${chartLabels}]]*/ [],
+                    datasets: [{
+                        label: 'Denní tržby (Kč)',
+                        data: /*[[${chartData}]]*/ [],
+                        borderColor: 'rgb(79, 70, 229)',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
+</div>

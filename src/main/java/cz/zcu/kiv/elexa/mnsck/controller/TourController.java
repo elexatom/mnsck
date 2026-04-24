@@ -1,27 +1,42 @@
 package cz.zcu.kiv.elexa.mnsck.controller;
 
 import cz.zcu.kiv.elexa.mnsck.entity.Tour;
+import cz.zcu.kiv.elexa.mnsck.repository.BookingRepository;
 import cz.zcu.kiv.elexa.mnsck.repository.DestinationRepository;
 import cz.zcu.kiv.elexa.mnsck.repository.GuideRepository;
 import cz.zcu.kiv.elexa.mnsck.repository.TourRepository;
 import cz.zcu.kiv.elexa.mnsck.repository.TransportRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Controller
 @RequestMapping("/tours")
+@RequiredArgsConstructor
 public class TourController {
+    private final TourRepository tourRepository;
+    private final BookingRepository bookingRepository;
+    private final DestinationRepository destinationRepository;
+    private final GuideRepository guideRepository;
+    private final TransportRepository transportRepository;
 
-    @Autowired
-    private TourRepository tourRepository;
-    @Autowired
-    private DestinationRepository destinationRepository;
-    @Autowired
-    private GuideRepository guideRepository;
-    @Autowired
-    private TransportRepository transportRepository;
+    /**
+     * Builds map of occupied capacity by tour id.
+     * @param tours list of tours
+     * @return map of occupied capacity by tour id
+     */
+    private Map<Long, Long> buildOccupiedByTourId(List<Tour> tours) {
+        Map<Long, Long> occupiedByTourId = new HashMap<>();
+        for (Tour tour : tours) {
+            occupiedByTourId.put(tour.getTour_id(), bookingRepository.sumOccupiedCapacity(tour, "CANCELLED"));
+        }
+        return occupiedByTourId;
+    }
 
     /**
      * Handle request for adding new tour.
@@ -33,10 +48,11 @@ public class TourController {
     @PostMapping
     public String addTour(@ModelAttribute Tour newTour, Model model) {
         // save to database
-        Tour saved = tourRepository.save(newTour);
+        tourRepository.save(newTour);
 
-        // pass saved object to model for view rendering
-        model.addAttribute("tour", saved);
+        List<Tour> tours = tourRepository.findAll();
+        model.addAttribute("tours", tours);
+        model.addAttribute("occupiedByTourId", buildOccupiedByTourId(tours));
 
         // return fragment
         return "tours-list :: tour-table";
@@ -52,7 +68,9 @@ public class TourController {
     @GetMapping
     public String listTours(Model model, @RequestHeader(value = "HX-Request", required = false) boolean isHtmxRequest) {
         // add tours to model
-        model.addAttribute("tours", tourRepository.findAll());
+        List<Tour> tours = tourRepository.findAll();
+        model.addAttribute("tours", tours);
+        model.addAttribute("occupiedByTourId", buildOccupiedByTourId(tours));
         model.addAttribute("destinations", destinationRepository.findAll());
         model.addAttribute("guides", guideRepository.findAll());
         model.addAttribute("transports", transportRepository.findAll());

@@ -1,0 +1,154 @@
+<div th:fragment="content" class="space-y-6 animate-fade-in text-base-content">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 p-5 rounded-box bg-base-200">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight">Průvodci</h1>
+            <p class="text-sm text-base-content/60 mt-1">Správa jazykového profilu průvodců.</p>
+        </div>
+        <button class="btn btn-primary rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 transition-transform" onclick="document.getElementById('addGuideModal').showModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Nový průvodce
+        </button>
+    </div>
+
+    <div th:replace="~{guides-list :: guide-table}"></div>
+
+    <dialog id="addGuideModal" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box w-11/12 max-w-2xl bg-base-100 p-0 rounded-3xl border border-base-content/10 shadow-2xl">
+            <div class="bg-primary/5 p-6 border-b border-base-content/5 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-xl">Nový průvodce</h3>
+                    <p class="text-xs text-base-content/50">Vytvořte nový profil pro průvodce CK.</p>
+                </div>
+            </div>
+
+            <div class="p-8">
+                <div id="create-error-alert" class="hidden alert alert-error rounded-2xl shadow-sm mb-6 border-none bg-error/10 text-error flex gap-3 text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span id="create-error-msg"></span>
+                </div>
+
+                <form hx-post="/guides" hx-target="#guide-table-container" hx-select="#guide-table-container" hx-swap="outerHTML" class="space-y-6"
+                      onsubmit="const msg = document.getElementById('create-error-msg'), alert = document.getElementById('create-error-alert'); if(this.language2Id.value && this.language1Id.value === this.language2Id.value) { msg.innerText = 'Jazyky se nesmí shodovat.'; alert.classList.remove('hidden'); return false; } alert.classList.add('hidden');"
+                      hx-on::after-request="if(event.detail.successful){document.getElementById('addGuideModal').close(); this.reset();}">
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <label class="form-control w-full"><span class="label-text font-medium mb-1">Jméno</span>
+                            <input type="text" name="name" placeholder="např. Jan" class="input input-bordered rounded-xl focus:ring-2 focus:ring-primary/20" required /></label>
+                        <label class="form-control w-full"><span class="label-text font-medium mb-1">Příjmení</span>
+                            <input type="text" name="surname" placeholder="např. Novák" class="input input-bordered rounded-xl focus:ring-2 focus:ring-primary/20" required /></label>
+
+                        <label class="form-control w-full"><span class="label-text font-medium mb-1">Primární jazyk</span>
+                            <select name="language1Id" class="select select-bordered rounded-xl focus:ring-2 focus:ring-primary/20" required>
+                                <option value="" disabled selected>Vyberte jazyk...</option>
+                                <option th:each="l : ${languages}" th:value="${l.language_id}" th:text="${l.lang_name}"></option>
+                            </select></label>
+                        <label class="form-control w-full"><span class="label-text font-medium mb-1">Sekundární jazyk</span>
+                            <select name="language2Id" class="select select-bordered rounded-xl focus:ring-2 focus:ring-primary/20">
+                                <option value="">Bez sekundárního jazyka</option>
+                                <option th:each="l : ${languages}" th:value="${l.language_id}" th:text="${l.lang_name}"></option>
+                            </select></label>
+                    </div>
+
+                    <div class="bg-info/10 text-info p-4 rounded-2xl flex gap-3 text-xs border border-info/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Sekundární jazyk musí být odlišný od primárního.
+                    </div>
+
+                    <div class="modal-action mt-8 border-t border-base-content/5 pt-6">
+                        <button type="button" class="btn btn-ghost rounded-xl" onclick="document.getElementById('addGuideModal').close()">Zrušit</button>
+                        <button type="submit" class="btn btn-primary rounded-xl px-8 shadow-lg">Uložit průvodce</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>Zavřít</button></form>
+    </dialog>
+
+    <dialog id="guideModal" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box w-11/12 max-w-2xl bg-base-100 p-0 rounded-3xl border border-base-content/10 shadow-2xl" id="guide-modal-content">
+            <div class="flex items-center justify-center h-40 text-base-content/40"><span class="loading loading-spinner loading-lg"></span></div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>Zavřít</button></form>
+    </dialog>
+</div>
+
+<div th:fragment="guide-table" id="guide-table-container" class="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+    <div class="overflow-x-auto bg-base-100 rounded-3xl shadow-xl shadow-base-200/50 border border-base-content/5">
+        <table class="table w-full text-sm">
+            <thead class="bg-base-200/50 text-base-content/70 font-semibold text-xs uppercase tracking-wider">
+            <tr><th class="py-4 pl-6 font-mono">ID</th><th>Jméno</th><th>Příjmení</th><th>Jazyková kompetence</th><th class="text-right pr-6">Akce</th></tr>
+            </thead>
+            <tbody class="divide-y divide-base-content/5">
+            <tr th:each="g : ${guides}" class="hover:bg-base-200/30 group">
+                <th th:text="${g.guide_id}" class="text-base-content/30 font-mono pl-6"></th>
+                <td class="font-bold py-4" th:text="${g.name}"></td>
+                <td class="font-medium" th:text="${g.surname}"></td>
+                <td>
+                    <div class="flex flex-wrap gap-2">
+                        <div class="badge badge-sm rounded-lg bg-primary/10 text-primary border-none py-2.5 px-3 font-medium" th:text="${g.language1?.lang_name ?: '-'}"></div>
+                        <div th:if="${g.language2}" class="badge badge-sm rounded-lg bg-orange-500/10 text-orange-600 border-none py-2.5 px-3 font-medium" th:text="${g.language2.lang_name}"></div>
+                    </div>
+                </td>
+                <td class="text-right pr-6">
+                    <button type="button" th:hx-get="@{'/guides/' + ${g.guide_id} + '/detail'}" hx-target="#guide-modal-content" hx-swap="innerHTML" onclick="document.getElementById('guideModal').showModal()" class="btn btn-circle btn-ghost btn-sm group-hover:bg-primary group-hover:text-white transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    </button>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(guides)}"><td colspan="5" class="text-center py-12 text-base-content/30 italic">Zatím nejsou evidováni žádní průvodci.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div th:fragment="guide-modal-content">
+    <div th:if="${guide != null}" class="animate-in fade-in h-full flex flex-col">
+        <div class="bg-primary/5 p-6 border-b border-base-content/5 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+            <div><h3 class="font-bold text-xl" th:text="'Profil - ' + ${guide.name} + ' ' + ${guide.surname}"></h3><p class="text-xs text-base-content/50" th:text="'Průvodce ID #' + ${guide.guide_id}"></p></div>
+        </div>
+
+        <div class="p-8">
+            <div id="edit-error-alert" th:classappend="${errorMessage == null ? 'hidden' : ''}" class="alert alert-error rounded-2xl mb-6 bg-error/10 text-error border-none flex gap-3 text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span id="edit-error-msg" th:text="${errorMessage}"></span>
+            </div>
+
+            <form th:hx-post="@{'/guides/' + ${guide.guide_id} + '/languages'}" hx-target="#guide-modal-content" hx-swap="innerHTML" class="space-y-6"
+                  onsubmit="const msg = document.getElementById('edit-error-msg'), alert = document.getElementById('edit-error-alert'); if(this.language2Id.value && this.language1Id.value === this.language2Id.value) { msg.innerText = 'Jazyky se nesmí shodovat.'; alert.classList.remove('hidden'); return false; } alert.classList.add('hidden');">
+
+                <div class="grid grid-cols-2 gap-6 p-4 rounded-2xl bg-base-200/50 border border-base-content/5">
+                    <div><span class="text-xs uppercase font-bold text-base-content/40 tracking-wider">Jméno</span><div class="font-semibold text-lg" th:text="${guide.name}"></div></div>
+                    <div><span class="text-xs uppercase font-bold text-base-content/40 tracking-wider">Příjmení</span><div class="font-semibold text-lg" th:text="${guide.surname}"></div></div>
+                </div>
+
+                <label class="form-control w-full"><span class="label-text font-medium mb-1">Primární jazyk</span>
+                    <select name="language1Id" class="select select-bordered w-full rounded-xl" required>
+                        <option value="" disabled th:selected="${selectedLanguage1Id == null}">Vyberte...</option>
+                        <option th:each="l : ${languages}" th:value="${l.language_id}" th:selected="${selectedLanguage1Id == l.language_id}" th:text="${l.lang_name}"></option>
+                    </select></label>
+
+                <label class="form-control w-full"><span class="label-text font-medium mb-1 text-base-content/60">Sekundární jazyk</span>
+                    <select name="language2Id" class="select select-bordered w-full rounded-xl">
+                        <option value="" th:selected="${selectedLanguage2Id == null}">Bez sekundárního jazyka</option>
+                        <option th:each="l : ${languages}" th:value="${l.language_id}" th:selected="${selectedLanguage2Id == l.language_id}" th:text="${l.lang_name}"></option>
+                    </select></label>
+
+                <div class="modal-action mt-8 border-t border-base-content/5 pt-6">
+                    <button type="button" class="btn btn-ghost rounded-xl" onclick="document.getElementById('guideModal').close()">Zrušit</button>
+                    <button type="submit" class="btn btn-primary rounded-xl px-8 shadow-lg">Uložit změny</button>
+                </div>
+            </form>
+
+            <div th:if="${successMessage != null}">
+                <script>
+                    document.getElementById('guideModal').close();
+                </script>
+                <div hx-get="/guides" hx-target="#guide-table-container" hx-select="#guide-table-container" hx-swap="outerHTML" hx-trigger="load"></div>
+            </div>
+        </div>
+    </div>
+    <div th:unless="${guide != null}" class="p-12 text-center text-base-content/40 italic font-medium">Vyberte průvodce v tabulce pro zobrazení detailu.</div>
+</div>

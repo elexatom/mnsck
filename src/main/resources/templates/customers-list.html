@@ -1,7 +1,8 @@
 <div th:fragment="content" class="space-y-6 animate-fade-in text-base-content" xmlns:hx-on="http://www.w3.org/1999/xhtml">
-
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-base-content">Evidence zákazníků</h1>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-5 rounded-box bg-base-200">
+        <div>
+            <h1 class="text-3xl font-bold">Evidence zákazníků</h1>
+        </div>
         <button class="btn btn-primary" onclick="addCustomerModal.showModal()">+ Přidat zákazníka</button>
     </div>
 
@@ -14,7 +15,7 @@
                 <th>Jméno a Příjmení</th>
                 <th>E-mail</th>
                 <th>Telefon</th>
-                <th>VIP</th>
+                <th>Status</th>
             </tr>
             </thead>
             <tbody>
@@ -25,7 +26,7 @@
                 <td th:text="${c.phone_number}">123456789</td>
                 <td>
                     <div th:if="${c.is_vip}" class="badge badge-accent">VIP</div>
-                    <div th:unless="${c.is_vip}" class="badge badge-ghost">Běžný</div>
+                    <div th:unless="${c.is_vip}" class="badge badge-warning">Běžný</div>
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(customers)}">
@@ -50,7 +51,7 @@
                         <input id="in1cust" type="text" name="name" class="input input-bordered w-full" required/>
                     </div>
                     <div class="form-control w-full">
-                        <label for="in2cust"><span class="label-text">Příjmení</span></label>
+                        <label for="in2cust" class="label"><span class="label-text">Příjmení</span></label>
                         <input id="in2cust" type="text" name="surname" class="input input-bordered w-full" required/>
                     </div>
                 </div>
@@ -62,13 +63,13 @@
 
                 <div class="form-control w-full mb-4">
                     <label for="in4cust" class="label"><span class="label-text">Telefon</span></label>
-                    <input id="in4cust" type="text" name="phone_number" class="input input-bordered w-full"/>
+                    <input id="in4cust" type="number" name="phone_number" class="input input-bordered w-full" required/>
                 </div>
 
                 <div class="form-control w-full mb-6">
                     <label class="cursor-pointer label justify-start gap-4">
                         <input type="checkbox" name="is_vip" class="checkbox checkbox-accent"/>
-                        <span class="label-text">VIP Zákazník (nárok na slevy)</span>
+                        <span class="label-text">VIP Zákazník (věrnostní sleva)</span>
                     </label>
                 </div>
 

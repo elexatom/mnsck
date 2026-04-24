@@ -6,7 +6,7 @@ plugins {
 
 group = 'cz.zcu.kiv.elexa'
 version = '0.0.1-SNAPSHOT'
-description = 'Semestralni prace pro KIV/MNS'
+description = 'Semestralni prace KIV/MNS'
 
 java {
 	toolchain {

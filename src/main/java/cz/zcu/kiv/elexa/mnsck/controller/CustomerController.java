@@ -42,6 +42,10 @@ public class CustomerController {
      */
     @PostMapping
     public String addCustomer(@ModelAttribute Customer customer, Model model) {
+        if (customer.getIs_vip() == null) {
+            customer.setIs_vip(false);
+        }
+        
         customerRepository.save(customer);
         model.addAttribute("customers", customerRepository.findAll());
         return "customers-list :: customer-table";

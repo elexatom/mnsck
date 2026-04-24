@@ -34,9 +34,6 @@ public class Booking {
     private Integer persons_reduced_qty;
     private Double total_price;
 
-    @Transient
-    private DiscountStrategy discount_strategy;
-
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments = new ArrayList<>();
 
@@ -69,7 +66,7 @@ public class Booking {
     public void pay(double amount) {
         Payment newPayment = new Payment();
         newPayment.setAmount(amount);
-        newPayment.setPayment_date(LocalDate.now());
+        newPayment.setPaymentDate(LocalDate.now());
         newPayment.setBooking(this);
         this.payments.add(newPayment);
 
@@ -91,5 +88,10 @@ public class Booking {
     public double getAmountPaid() {
         if (this.payments == null) return 0.0;
         return this.payments.stream().mapToDouble(Payment::getAmount).sum();
+    }
+
+    public double amountRemaining() {
+        double total = this.total_price == null ? 0.0 : this.total_price;
+        return Math.max(0.0, total - getAmountPaid());
     }
 }

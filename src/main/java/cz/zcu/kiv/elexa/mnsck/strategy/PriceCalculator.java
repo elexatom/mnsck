@@ -16,11 +16,11 @@ public class PriceCalculator {
         return this.discountStrategy;
     }
 
-    public double calculateFinal(double basePrice) {
+    public double calculateFinal(double basePrice, double reducedPrice, int baseQty, int reducedQty) {
         if (this.discountStrategy == null) {
             throw new IllegalStateException("Strategie nebyla nastavena!");
         }
 
-        return this.discountStrategy.calculateFinal(basePrice);
+        return this.discountStrategy.calculateFinal(basePrice, reducedPrice, baseQty, reducedQty);
     }
 }

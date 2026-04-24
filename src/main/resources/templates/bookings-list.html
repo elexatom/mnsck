@@ -1,7 +1,13 @@
 <div th:fragment="content" class="space-y-6 animate-fade-in text-base-content">
 
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-base-content">Správa rezervací</h1>
+    <script th:if="${selectedTourId != null}">
+        setTimeout(() => addBookingModal.showModal(), 50);
+    </script>
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-5 rounded-box bg-base-200">
+        <div>
+            <h1 class="text-3xl font-bold">Správa rezervací</h1>
+        </div>
         <button class="btn btn-primary" onclick="addBookingModal.showModal()">+ Nová rezervace</button>
     </div>
 
@@ -64,17 +70,19 @@
                 </td>
 
                 <td class="flex gap-2 items-center">
-
-                    <form th:if="${b.status_string == 'WAITING_FOR_PAYMENT' or b.status_string == 'PARTIALLY_PAID'}"
-                          th:hx-post="'/bookings/' + ${b.id} + '/pay'"
-                          hx-target="#booking-table-container"
-                          hx-swap="outerHTML"
-                          class="flex gap-1">
-
-                        <input type="number" step="0.01" name="amount" class="input input-bordered input-xs w-20"
-                               placeholder="Částka" required>
-                        <button type="submit" class="btn btn-success btn-xs text-white">Zaplatit</button>
-                    </form>
+                    <button th:if="${b.status_string == 'WAITING_FOR_PAYMENT' or b.status_string == 'PARTIALLY_PAID'}"
+                            th:hx-get="'/bookings/' + ${b.id} + '/payment-modal'"
+                            hx-target="#payment-modal-content"
+                            hx-swap="innerHTML"
+                            hx-on::after-request="paymentModal.showModal()"
+                            class="btn btn-success btn-xs btn-square text-white"
+                            title="Správa plateb"
+                            aria-label="Správa plateb">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M3 9.75v6a2.25 2.25 0 002.25 2.25h13.5A2.25 2.25 0 0021 15.75v-6A2.25 2.25 0 0018.75 7.5H5.25A2.25 2.25 0 003 9.75z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 13.5h3" />
+                        </svg>
+                    </button>
 
                     <button th:if="${b.status_string != 'CANCELLED'}"
                             th:hx-post="'/bookings/' + ${b.id} + '/cancel'"
@@ -113,8 +121,9 @@
                 <div class="form-control w-full mb-4">
                     <label class="label"><span class="label-text">Vyberte zájezd</span></label>
                     <select name="tourId" class="select select-bordered w-full" required>
-                        <option value="" disabled selected>Zvolte zájezd...</option>
+                        <option value="" disabled th:selected="${selectedTourId == null}">Zvolte zájezd...</option>
                         <option th:each="t : ${tours}" th:value="${t.tour_id}"
+                                th:selected="${selectedTourId != null and selectedTourId == t.tour_id}"
                                 th:text="${t.tour_name} + ' (' + ${t.price_person} + ' Kč)'"></option>
                     </select>
                 </div>
@@ -140,5 +149,74 @@
             <button>Zavřít</button>
         </form>
     </dialog>
+
+    <dialog id="paymentModal" class="modal">
+        <div class="modal-box w-11/12 max-w-2xl bg-base-100 text-base-content">
+            <div id="payment-modal-content" class="min-h-24 flex items-center justify-center text-base-content/60">
+                Načítám detail plateb...
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>Zavřít</button>
+        </form>
+    </dialog>
+
+    <div th:fragment="payment-modal-content">
+        <th:block th:if="${booking != null}">
+            <h3 class="font-bold text-lg mb-2">Platby rezervace #<span th:text="${booking.id}">1</span></h3>
+            <p class="text-sm text-base-content/70 mb-4">
+                <span th:text="${booking.customer.surname} + ' ' + ${booking.customer.name}">Zákazník</span>
+                -
+                <span th:text="${booking.tour.tour_name}">Zájezd</span>
+            </p>
+
+            <div class="grid grid-cols-3 gap-2 mb-4 text-sm">
+                <div class="bg-base-200 rounded-lg p-3">
+                    <div class="text-base-content/70">Celkem</div>
+                    <div class="font-semibold" th:text="${#numbers.formatDecimal(booking.total_price, 1, 2)} + ' Kč'">0.00 Kč</div>
+                </div>
+                <div class="bg-base-200 rounded-lg p-3">
+                    <div class="text-base-content/70">Zaplaceno</div>
+                    <div class="font-semibold" th:text="${#numbers.formatDecimal(booking.amountPaid, 1, 2)} + ' Kč'">0.00 Kč</div>
+                </div>
+                <div class="bg-base-200 rounded-lg p-3">
+                    <div class="text-base-content/70">Zbývá uhradit</div>
+                    <div class="font-semibold" th:text="${#numbers.formatDecimal(booking.amountRemaining, 1, 2)} + ' Kč'">0.00 Kč</div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-box border border-base-300 mb-4">
+                <table class="table table-sm w-full">
+                    <thead class="bg-base-200 text-base-content">
+                    <tr>
+                        <th>Datum</th>
+                        <th>Částka</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="p : ${booking.payments}">
+                        <td th:text="${p.paymentDate}">2026-04-21</td>
+                        <td th:text="${#numbers.formatDecimal(p.amount, 1, 2)} + ' Kč'">0.00 Kč</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(booking.payments)}">
+                        <td colspan="2" class="text-center py-3 text-base-content/60">Zatím není evidována žádná platba.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <form th:hx-post="'/bookings/' + ${booking.id} + '/pay'"
+                  hx-target="#booking-table-container"
+                  hx-swap="outerHTML"
+                  hx-on::after-request="paymentModal.close()"
+                  class="flex gap-2 items-end">
+                <div class="form-control flex-1">
+                    <label for="payment-amount" class="label"><span class="label-text">Nová platba</span></label>
+                    <input id="payment-amount" type="number" step="0.01" min="0.01" name="amount" class="input input-bordered w-full" placeholder="Částka" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Přidat platbu</button>
+            </form>
+        </th:block>
+    </div>
 
 </div>
