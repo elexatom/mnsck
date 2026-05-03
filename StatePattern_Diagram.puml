@@ -1,0 +1,102 @@
+@startuml StatePattern_Diagram
+!theme plain
+skinparam classBackgroundColor #FCE4EC
+skinparam classBorderColor #C2185B
+skinparam classArrowColor #C2185B
+
+title State Pattern: Booking Status Management
+
+' Interface
+interface BookingState {
+    {abstract} void pay(Booking, double)
+    {abstract} void cancel(Booking)
+    {abstract} String getStateName()
+}
+
+' Concrete States
+class WaitingForPaymentState implements BookingState {
+    pay(booking, amount)
+        - Creates Payment object
+        - Adds to booking.payments
+        - Updates status_string
+    cancel(booking)
+        - Sets to CancelledState
+}
+
+class PartiallyPaidState implements BookingState {
+    pay(booking, amount)
+        - If amountRemaining == 0
+          → Change to PaidState
+        - Else stay PartiallyPaidState
+    cancel(booking)
+        - Can cancel with refund logic
+}
+
+class PaidState implements BookingState {
+    pay(booking, amount)
+        - Stays PaidState
+        - Extra payment recorded (if allowed)
+    cancel(booking)
+        - Cannot cancel (or refund logic)
+}
+
+class CancelledState implements BookingState {
+    pay(booking, amount)
+        - Cannot accept payment
+    cancel(booking)
+        - Already cancelled, no-op
+}
+
+' Entity using State
+class Booking {
+    - current_status: BookingState [Transient]
+    - status_string: String [Persisted: "WAITING_FOR_PAYMENT", "PARTIALLY_PAID", "PAID", "CANCELLED"]
+    - total_price: Double
+    - payments: List<Payment>
+
+    + pay(amount: double): void
+      • current_status.pay(this, amount)
+    + cancel(): void
+      • current_status.cancel(this)
+    + setStatus(status: BookingState): void
+    + getAmountPaid(): double
+    + amountRemaining(): double
+
+    {method} @PostLoad init()
+      • Deserialize status_string → current_status
+    {method} @PrePersist/@PreUpdate syncStatus()
+      • Serialize current_status → status_string
+}
+
+class Payment {
+    - booking: Booking
+    - amount: Double
+    - paymentDate: LocalDate
+}
+
+Booking --> Payment
+Booking --> BookingState
+
+note right of Booking::pay
+    Example:
+    booking.pay(500.0)
+
+    If total = 1000, paid = 500
+    → PartiallyPaidState
+
+    booking.pay(500.0)
+    → PaidState (fully paid)
+end note
+
+note right of WaitingForPaymentState
+    Initial state when booking
+    is created
+end note
+
+note right of CancelledState
+    Terminal state - cannot
+    transition out
+end note
+
+@enduml
+

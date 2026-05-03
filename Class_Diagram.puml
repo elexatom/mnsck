@@ -1,0 +1,283 @@
+@startuml MNSCK_Class_Diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+title MNSCK - UML Class Diagram
+
+' =========================
+' DOMAIN MODEL
+' =========================
+package "Domain Model" {
+  class AppUser <<entity>> {
+    - id : Long
+    - name : String
+    - surname : String
+    - email : String
+    - password : String
+  }
+
+  class Customer <<entity>> {
+    - phone_number : String
+    - bank_account_number : String
+    - is_vip : Boolean
+  }
+
+  class Staff <<entity>> {
+    - role : String
+    - office_number : String
+  }
+
+  class Tour <<entity>> {
+    - tour_id : Long
+    - tour_name : String
+    - start_date : LocalDate
+    - end_date : LocalDate
+    - price_person : Double
+    - price_person_reduced : Double
+    - capacity : Integer
+  }
+
+  class Booking <<entity>> {
+    - id : Long
+    - order_date : LocalDate
+    - persons_qty : Integer
+    - persons_reduced_qty : Integer
+    - total_price : Double
+    - status_string : String
+    - current_status : BookingState <<transient>>
+    + pay(amount : double) : void
+    + cancel() : void
+    + amountRemaining() : double
+    + getAmountPaid() : double
+    + setStatus(status : BookingState) : void
+  }
+
+  class Payment <<entity>> {
+    - id : Long
+    - amount : Double
+    - paymentDate : LocalDate
+  }
+
+  class Guide <<entity>> {
+    - guide_id : Long
+    - name : String
+    - surname : String
+  }
+
+  class Destination <<entity>> {
+    - destination_id : Long
+    - destination_name : String
+    - destination_country : String
+    - destination_description : String
+  }
+
+  class Transport <<entity>> {
+    - transport_id : Long
+    - type : String
+    - details : String
+  }
+
+  class Language <<entity>> {
+    - language_id : Long
+    - lang_name : String
+  }
+}
+
+AppUser <|-- Customer
+AppUser <|-- Staff
+
+Booking "0..*" --> "1" Customer : customer
+Booking "0..*" --> "1" Tour : tour
+Booking "1" *-- "0..*" Payment : payments
+Tour "0..*" --> "1" Guide : guide
+Tour "0..*" --> "1" Destination : destination
+Tour "0..*" --> "1" Transport : transport
+Guide "0..*" --> "1" Language : language1
+Guide "0..*" --> "0..1" Language : language2
+Booking --> BookingState : current_status
+
+' =========================
+' PATTERNS
+' =========================
+package "Patterns" {
+  interface BookingState <<state>> {
+    + pay(booking : Booking, amount : double) : void
+    + cancel(booking : Booking) : void
+    + getStateName() : String
+  }
+
+  class WaitingForPaymentState <<state>>
+  class PartiallyPaidState <<state>>
+  class PaidState <<state>>
+  class CancelledState <<state>>
+
+  BookingState <|.. WaitingForPaymentState
+  BookingState <|.. PartiallyPaidState
+  BookingState <|.. PaidState
+  BookingState <|.. CancelledState
+
+  interface DiscountStrategy <<strategy>> {
+    + calculateFinal(basePrice : double, reducedPrice : double, baseQty : int, reducedQty : int) : double
+  }
+
+  class NoDiscountStrategy <<strategy>>
+  class VipCustomerStrategy <<strategy>>
+  class LastMinuteStrategy <<strategy>>
+  class DiscountStrategyFactory <<factory>> {
+    + createStrategy(customer : Customer, tour : Tour) : DiscountStrategy
+  }
+  class PriceCalculator <<strategy>> {
+    - discountStrategy : DiscountStrategy
+    + calculateFinal(basePrice : double, reducedPrice : double, baseQty : int, reducedQty : int) : double
+  }
+
+  DiscountStrategy <|.. NoDiscountStrategy
+  DiscountStrategy <|.. VipCustomerStrategy
+  DiscountStrategy <|.. LastMinuteStrategy
+  DiscountStrategyFactory ..> DiscountStrategy
+  DiscountStrategyFactory ..> Customer
+  DiscountStrategyFactory ..> Tour
+  PriceCalculator --> DiscountStrategy
+}
+
+Booking ..> BookingState
+PricingStrategyService ..> DiscountStrategyFactory
+PricingStrategyService ..> PriceCalculator
+
+' =========================
+' APPLICATION LAYER
+' =========================
+package "Application Layer" {
+  class PricingStrategyService <<service>> {
+    + calculatePrice(customer : Customer, tour : Tour, fullPrice : int, reducedPrice : int) : double
+  }
+
+  class TourStatisticsService <<service>> {
+    + getAverageOccupancy() : long
+  }
+
+  class BookingStatusChangedEvent <<event>>
+  class EmailNotificationListener <<listener>> {
+    + handleBookingStatusChange(event : BookingStatusChangedEvent) : void
+  }
+}
+
+BookingStatusChangedEvent --> Booking
+EmailNotificationListener ..> BookingStatusChangedEvent
+EmailNotificationListener ..> Customer
+
+' =========================
+' REPOSITORIES
+' =========================
+package "Repositories" {
+  interface TourRepository <<repository>>
+  interface BookingRepository <<repository>> {
+    + sumOccupiedCapacity(tour : Tour, status : String) : long
+    + countByStatus(status : String) : long
+  }
+  interface CustomerRepository <<repository>>
+  interface GuideRepository <<repository>>
+  interface PaymentRepository <<repository>> {
+    + findRevenueByDate() : List<Object[]>
+  }
+  interface DestinationRepository <<repository>>
+  interface TransportRepository <<repository>>
+  interface LanguageRepository <<repository>>
+}
+
+TourRepository ..> Tour
+BookingRepository ..> Booking
+CustomerRepository ..> Customer
+GuideRepository ..> Guide
+PaymentRepository ..> Payment
+DestinationRepository ..> Destination
+TransportRepository ..> Transport
+LanguageRepository ..> Language
+TourStatisticsService ..> TourRepository
+TourStatisticsService ..> BookingRepository
+PricingStrategyService ..> Customer
+PricingStrategyService ..> Tour
+
+' =========================
+' CONTROLLERS
+' =========================
+package "Controllers" {
+  class TourController <<controller>> {
+    - tourRepository : TourRepository
+    - bookingRepository : BookingRepository
+    - destinationRepository : DestinationRepository
+    - guideRepository : GuideRepository
+    - transportRepository : TransportRepository
+    + listTours() : String
+    + addTour() : String
+  }
+
+  class BookingController <<controller>> {
+    - bookingRepository : BookingRepository
+    - tourRepository : TourRepository
+    - customerRepository : CustomerRepository
+    - strategyService : PricingStrategyService
+    - eventPublisher : ApplicationEventPublisher
+    + listBookings() : String
+    + addBooking() : String
+    + paymentModal() : String
+    + payBooking() : String
+    + cancelBooking() : String
+  }
+
+  class GuideController <<controller>> {
+    - guideRepository : GuideRepository
+    - languageRepository : LanguageRepository
+    + listGuides() : String
+    + addGuide() : String
+    + guideDetail() : String
+    + updateLanguages() : String
+  }
+
+  class CustomerController <<controller>> {
+    - customerRepository : CustomerRepository
+    + listCustomers() : String
+    + addCustomer() : String
+  }
+
+  class IndexController <<controller>> {
+    - tourRepository : TourRepository
+    - bookingRepository : BookingRepository
+    - paymentRepository : PaymentRepository
+    - tourStatisticsService : TourStatisticsService
+    + index() : String
+  }
+}
+
+TourController ..> TourRepository
+TourController ..> BookingRepository
+TourController ..> DestinationRepository
+TourController ..> GuideRepository
+TourController ..> TransportRepository
+
+BookingController ..> BookingRepository
+BookingController ..> TourRepository
+BookingController ..> CustomerRepository
+BookingController ..> PricingStrategyService
+BookingController ..> BookingStatusChangedEvent
+BookingController ..> ApplicationEventPublisher
+
+GuideController ..> GuideRepository
+GuideController ..> LanguageRepository
+CustomerController ..> CustomerRepository
+IndexController ..> TourRepository
+IndexController ..> BookingRepository
+IndexController ..> PaymentRepository
+IndexController ..> TourStatisticsService
+
+@enduml
+
+

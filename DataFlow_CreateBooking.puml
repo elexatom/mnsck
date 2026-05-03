@@ -1,0 +1,109 @@
+@startuml DataFlow_Diagram
+!theme plain
+skinparam defaultFontSize 11
+skinparam backgroundColor #FEFEFE
+
+title Data Flow: Creating a Booking with Pricing
+
+actor User
+participant "Browser\n(HTML + HTMX)" as Browser #E1F5FE
+participant "BookingController" as Controller #FFF3E0
+participant "PricingStrategyService" as PricingService #F3E5F5
+participant "DiscountStrategyFactory" as Factory #FFF9C4
+participant "DiscountStrategy\n(implementation)" as Strategy #FFF9C4
+participant "PriceCalculator" as Calculator #FFF9C4
+participant "BookingRepository" as Repo #E8F5E9
+participant "Database\n(H2)" as DB #EEEEEE
+
+User -> Browser: Fill booking form\n(customer, tour, qty, reduced_qty)\nClick "Create Booking"
+
+Browser -> Controller: POST /bookings/save\n@ModelAttribute Booking
+
+Controller -> PricingService: calculatePrice(\n  customer,\n  tour,\n  qty,\n  reduced_qty\n)
+
+PricingService -> Factory: createStrategy(\n  customer,\n  tour\n)
+
+Factory -> Factory: Calculate daysUntilTour\nfrom tour.start_date
+
+alt Strategy Decision
+  alt daysUntilTour <= 14
+    Factory -> Strategy: new LastMinuteStrategy()
+  else customer.is_vip == true
+    Factory -> Strategy: new VipCustomerStrategy()
+  else
+    Factory -> Strategy: new NoDiscountStrategy()
+  end
+end
+
+Factory --> PricingService: return DiscountStrategy
+
+PricingService -> Calculator: new PriceCalculator(strategy)
+
+PricingService -> Calculator: calculateFinal(\n  basePrice = tour.price_person,\n  reducedPrice = tour.price_person_reduced,\n  baseQty = booking.persons_qty,\n  reducedQty = booking.persons_reduced_qty\n)
+
+Calculator -> Strategy: calculateFinal(...) [delegated call]
+
+alt Select Strategy
+  alt NoDiscountStrategy
+    Strategy -> Strategy: final = (basePrice * baseQty)\n        + (reducedPrice * reducedQty)
+  else VipCustomerStrategy
+    Strategy -> Strategy: discountedBase = basePrice * 0.5\nfinal = (discountedBase * baseQty)\n      + (reducedPrice * reducedQty)
+  else LastMinuteStrategy
+    Strategy -> Strategy: discountedBase = basePrice * 0.7\ndiscountedReduced = reducedPrice * 0.7\nfinal = (discountedBase * baseQty)\n      + (discountedReduced * reducedQty)
+  end
+end
+
+Strategy --> Calculator: return calculated price
+
+Calculator --> PricingService: return finalPrice
+
+PricingService -> PricingService: roundFinal = Math.round(finalPrice)
+
+PricingService --> Controller: return roundFinal
+
+Controller -> Controller: booking.setTotal_price(finalPrice)
+Controller -> Controller: booking.setStatus(WaitingForPaymentState)
+
+Controller -> Repo: save(booking)
+
+Repo -> DB: INSERT INTO BOOKING\n(customer_id, tour_id, total_price,\npersons_qty, persons_reduced_qty,\nstatus, order_date)
+
+DB --> Repo: return booking with ID
+
+Repo --> Controller: return persisted Booking
+
+Controller -> Browser: return updated HTML fragment\n(HTMX - no page reload needed)
+
+Browser -> User: Display new booking in table\nshow: ID, customer, tour, price,\nstatus "WAITING_FOR_PAYMENT"
+
+note right of PricingService
+    SERVICE LAYER
+    Business logic orchestration
+end note
+
+note right of Factory
+    FACTORY PATTERN
+    Decides which strategy based on:
+    • Business rules
+    • Data conditions
+end note
+
+note right of Strategy
+    STRATEGY PATTERN
+    Each strategy encapsulates
+    a different calculation algorithm
+end note
+
+note right of Calculator
+    CONTEXT in Strategy Pattern
+    Uses strategy to calculate price
+end note
+
+note right of Browser
+    HTMX enables partial updates
+    without full page reload
+    → Better UX
+end note
+
+@enduml
+

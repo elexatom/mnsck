@@ -1,0 +1,153 @@
+@startuml StrategyPattern_Diagram
+!theme plain
+skinparam classBackgroundColor #FFF9C4
+skinparam classBorderColor #F57F17
+skinparam classArrowColor #F57F17
+
+title Strategy Pattern: Dynamic Pricing
+
+' Strategy Interface
+interface DiscountStrategy {
+    {abstract} double calculateFinal(double basePrice, double reducedPrice, int baseQty, int reducedQty)
+}
+
+' Concrete Strategies
+class NoDiscountStrategy implements DiscountStrategy {
+    calculateFinal(basePrice, reducedPrice, baseQty, reducedQty)
+        return (basePrice * baseQty) + (reducedPrice * reducedQty)
+}
+
+class VipCustomerStrategy implements DiscountStrategy {
+    calculateFinal(basePrice, reducedPrice, baseQty, reducedQty)
+        // VIP gets 50% discount on full price
+        double discountedBase = basePrice * 0.5
+        return (discountedBase * baseQty) + (reducedPrice * reducedQty)
+}
+
+class LastMinuteStrategy implements DiscountStrategy {
+    calculateFinal(basePrice, reducedPrice, baseQty, reducedQty)
+        // 14 days or less before tour start
+        double discountedBase = basePrice * 0.7  // 30% off
+        double discountedReduced = reducedPrice * 0.7
+        return (discountedBase * baseQty) + (discountedReduced * reducedQty)
+}
+
+' Factory
+class DiscountStrategyFactory {
+    {field} -final @Component
+
+    {method} +createStrategy(customer: Customer, tour: Tour): DiscountStrategy
+
+    Criteria:
+    • daysUntilTour = ChronoUnit.DAYS.between(today, tour.start)
+    • IF daysUntilTour <= 14 → LastMinuteStrategy()
+    • ELSE IF customer.isVip == true → VipCustomerStrategy()
+    • ELSE → NoDiscountStrategy()
+}
+
+' Price Calculator (Context in Strategy Pattern)
+class PriceCalculator {
+    -discountStrategy: DiscountStrategy
+
+    +PriceCalculator(strategy: DiscountStrategy)
+    +setDiscountStrategy(strategy: DiscountStrategy): void
+    +calculateFinal(basePrice, reducedPrice, baseQty, reducedQty): double
+        • deleguje na discountStrategy.calculateFinal()
+}
+
+' Service Layer
+class PricingStrategyService {
+    {field} -final strategyFactory: DiscountStrategyFactory
+
+    {method} +calculatePrice(customer: Customer, tour: Tour, fullPrice: int, reducedPrice: int): double
+
+    Algorithm:
+    1. strategy = strategyFactory.createStrategy(customer, tour)
+    2. calculator = new PriceCalculator(strategy)
+    3. finalPrice = calculator.calculateFinal(...)
+    4. return Math.round(finalPrice)
+}
+
+' Entities
+class Customer {
+    -is_vip: Boolean
+}
+
+class Tour {
+    -price_person: Double
+    -price_person_reduced: Double
+    -start_date: LocalDate
+}
+
+class Booking {
+    -total_price: Double
+    -customer: Customer
+    -tour: Tour
+    -persons_qty: Integer
+    -persons_reduced_qty: Integer
+}
+
+' Relationships
+DiscountStrategyFactory --> DiscountStrategy
+PriceCalculator --> DiscountStrategy
+PricingStrategyService --> DiscountStrategyFactory
+PricingStrategyService --> PriceCalculator
+PricingStrategyService --> Customer
+PricingStrategyService --> Tour
+Booking --> Customer
+Booking --> Tour
+
+note right of LastMinuteStrategy
+    Triggered when tour starts
+    within 14 days (≤14)
+    30% discount applied
+end note
+
+note right of VipCustomerStrategy
+    For VIP customers
+    50% discount on base price
+    Regular price for reduced qty
+end note
+
+note right of NoDiscountStrategy
+    Default: Full prices
+    No discount applied
+end note
+
+note right of DiscountStrategyFactory
+    Factory Pattern decides which
+    strategy to use based on:
+    • Days until tour
+    • Customer VIP status
+
+    DECISION TREE:
+    daysUntilTour ≤ 14?
+        YES → LastMinute
+        NO  → isVip?
+            YES → VipCustomer
+            NO  → NoDiscount
+end note
+
+note bottom of PricingStrategyService
+    SERVICE LAYER USAGE:
+
+    @Service
+    public class BookingService {
+        @Autowired
+        private PricingStrategyService pricingService;
+
+        public void createBooking(Booking booking) {
+            double finalPrice = pricingService.calculatePrice(
+                booking.getCustomer(),
+                booking.getTour(),
+                booking.getPersons_qty(),
+                booking.getPersons_reduced_qty()
+            );
+            booking.setTotal_price(finalPrice);
+            bookingRepository.save(booking);
+        }
+    }
+end note
+
+@enduml
+

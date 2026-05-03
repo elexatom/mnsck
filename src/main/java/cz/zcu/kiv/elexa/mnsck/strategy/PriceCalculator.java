@@ -22,24 +22,6 @@ public class PriceCalculator {
     }
 
     /**
-     * Nastaví strategii slevy pro výpočet konečné ceny.
-     * 
-     * @param discountStrategy Strategie slevy, která bude použita pro výpočet konečné ceny
-     */
-    public void setDiscountStrategy(DiscountStrategy discountStrategy) {
-        this.discountStrategy = discountStrategy;
-    }
-
-    /**
-     * Získá aktuální strategii slevy.
-     * 
-     * @return DiscountStrategy aktuální strategie slevy, která bude použita pro výpočet konečné ceny
-     */
-    public DiscountStrategy getDiscountStrategy() {
-        return this.discountStrategy;
-    }
-
-    /**
      * Vypočítá konečnou cenu po aplikaci slevy pomocí aktuální strategie slevy.
      * 
      * @param basePrice Cena za jednotku bez slevy.
