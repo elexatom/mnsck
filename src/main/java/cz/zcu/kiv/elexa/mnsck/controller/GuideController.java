@@ -13,6 +13,11 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Objects;
 
+/**
+ * Kontroler pro správu průvodců. Zpracovává požadavky pro zobrazení seznamu průvodců, přidání nového průvodce a aktualizaci jazykového profilu průvodce.
+ *
+ * @author Tomáš Elexa
+ */
 @Controller
 @RequestMapping("/guides")
 @RequiredArgsConstructor
@@ -20,6 +25,13 @@ public class GuideController {
     private final GuideRepository guideRepository;
     private final LanguageRepository languageRepository;
 
+    /**
+     * Zpracování požadavku pro vypsání senzamu všech průvodců. Pokud je požadavek HTMX, vrací pouze část stránky s tabulkou průvodců, jinak vrací celou stránku s layoutem.
+     *
+     * @param model model pro frontend data
+     * @param isHtmxRequest true, pokud se jedná o HTMX požadavek
+     * @return render stránky se seznamem průvodců, buď jako část stránky pro HTMX, nebo jako celá stránka s layoutem
+     */
     @GetMapping
     public String listGuides(Model model, @RequestHeader(value = "HX-Request", required = false) boolean isHtmxRequest) {
         model.addAttribute("guides", guideRepository.findAll());
@@ -31,6 +43,17 @@ public class GuideController {
         return "layout";
     }
 
+    /**
+     * Zpracování požadavku pro přidání nového průvodce.
+     *
+     * @param model model pro frontend data
+     * @param name jméno průvodce
+     * @param surname příjmení průvodce
+     * @param language1Id ID primárního jazyka
+     * @param language2Id ID sekundárního jazyka
+     * @param response HTTP odpověď pro nastavení statusu v případě chyby
+     * @return render stránky
+     */
     @PostMapping
     public String addGuide(Model model, @RequestParam String name, @RequestParam String surname,
                            @RequestParam Long language1Id, @RequestParam(required = false) Long language2Id,
@@ -61,6 +84,13 @@ public class GuideController {
         return "guides-list :: guide-table";
     }
 
+    /**
+     * Zpracování požadavku pro zobrazení detailu o průvodci.
+     *
+     * @param id ID průvodce, jehož detail se má zobrazit
+     * @param model model pro frontend data
+     * @return render části stránky s obsahem modálního okna pro detail průvodce
+     */
     @GetMapping("/{id}/detail")
     public String guideDetail(@PathVariable Long id, Model model) {
         Guide guide = guideRepository.findById(id).orElseThrow();
@@ -72,6 +102,16 @@ public class GuideController {
         return "guides-list :: guide-modal-content";
     }
 
+    /**
+     * Zpracování požadavku pro aktualizaci jazyků průvodce.
+     *
+     * @param id ID průvodce, kterému se mění jazyky
+     * @param language1Id ID primárního jazyka
+     * @param language2Id ID sekundárního jazyka
+     * @param model model pro frontend data
+     * @param response HTTP odpověď pro nastavení statusu v případě chyby
+     * @return render stránky s aktualizovaným jazykovým profilem průvodce, buď jako část stránky pro HTMX, nebo jako celá stránka s layoutem
+     */
     @PostMapping("/{id}/languages")
     public String updateLanguages(@PathVariable Long id,
                                   @RequestParam Long language1Id,

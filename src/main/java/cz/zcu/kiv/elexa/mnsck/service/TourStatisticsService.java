@@ -5,12 +5,22 @@ import cz.zcu.kiv.elexa.mnsck.repository.TourRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * Služba pro správu statistik zájezdů.
+ * 
+ * @author Tomáš Elexa
+ */
 @Service
 @RequiredArgsConstructor
 public class TourStatisticsService {
     private final TourRepository tourRepository;
     private final BookingRepository bookingRepository;
 
+    /**
+     * Vypočítá průměrnou obsazenost zájezdů v procentech.
+     * 
+     * @return Průměrná obsazenost v procentech.
+     */
     public long getAverageOccupancy() {
         long tourCount = tourRepository.count();
         if (tourCount == 0) return 0;

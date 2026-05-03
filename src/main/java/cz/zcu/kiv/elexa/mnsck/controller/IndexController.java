@@ -13,6 +13,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Kontroler pro hlavní stránku dashboardu. Zpracovává požadavky pro zobrazení přehledu statistik a grafů. Používá HTMX pro dynamické aktualizace části stránky bez nutnosti reloadu celé stránky. Načítá data z různých repozitářů a služeb pro zobrazení klíčových metrik a grafů na dashboardu.
+ *
+ * @author Tomáš Elexa
+ */
 @Controller
 @RequiredArgsConstructor
 public class IndexController {
@@ -21,6 +26,13 @@ public class IndexController {
     private final PaymentRepository paymentRepository;
     private final TourStatisticsService tourStatisticsService;
 
+    /**
+     * Zpracování požadavku pro vypsání úvodní stránky dashboardu.
+     *
+     * @param model model pro frontend data
+     * @param isHtmxRequest true, pokud se jedná o HTMX požadavek
+     * @return render stránky s přehledem statistik a grafů, buď jako část stránky pro HTMX, nebo jako celá stránka s layoutem
+     */
     @GetMapping("/")
     public String index(Model model,
                         @RequestHeader(value = "HX-Request", required = false) boolean isHtmxRequest) {

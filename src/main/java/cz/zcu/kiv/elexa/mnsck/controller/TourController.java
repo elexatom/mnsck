@@ -15,6 +15,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * Kontroler pro zájezdy. Zpracovává požadavky pro zobrazení seznamu zájezdů a přidání nového zájezdu. Používá HTMX pro dynamické aktualizace části stránky bez nutnosti reloadu celé stránky. Načítá data z různých repozitářů pro zobrazení informací o zájezdech, jako jsou obsazenost, destinace, průvodci a doprava.
+ * @author Tomáš Elexa
+ */
 @Controller
 @RequestMapping("/tours")
 @RequiredArgsConstructor
@@ -26,9 +31,10 @@ public class TourController {
     private final TransportRepository transportRepository;
 
     /**
-     * Builds map of occupied capacity by tour id.
-     * @param tours list of tours
-     * @return map of occupied capacity by tour id
+     * Sestaví mapu obsazenosti zájezdů podle ID zájezdu. Pro každý zájezd získá součet obsazené kapacity z rezervací, které nejsou zrušené.
+     *
+     * @param tours seznam zájezdů, pro které se má sestavit mapa obsazenosti
+     * @return mapa, kde klíčem je ID zájezdu a hodnotou je obsazenost (součet obsazené kapacity) pro daný zájezd
      */
     private Map<Long, Long> buildOccupiedByTourId(List<Tour> tours) {
         Map<Long, Long> occupiedByTourId = new HashMap<>();
@@ -39,11 +45,11 @@ public class TourController {
     }
 
     /**
-     * Handle request for adding new tour.
+     * Zpracování požadavku pro přidání nového zájezdu. Uloží nový zájezd do databáze a vrátí aktualizovanou část stránky se seznamem zájezdů pro HTMX, aby se zobrazil nový zájezd bez nutnosti reloadu celé stránky.
      *
-     * @param newTour new tour to be added
-     * @param model   data for frontend
-     * @return render page
+     * @param newTour data pro vytvoření nového zájezdu, získaná z formuláře
+     * @param model model pro frontend data
+     * @return render aktualizované části stránky se seznamem zájezdů pro HTMX, aby se zobrazil nový zájezd bez nutnosti reloadu celé stránky
      */
     @PostMapping
     public String addTour(@ModelAttribute Tour newTour, Model model) {
@@ -59,11 +65,11 @@ public class TourController {
     }
 
     /**
-     * Handle request for listing all tours.
+     * Zpracování požadavku pro vypsání zájezdů.
      *
-     * @param model         data for frontend
-     * @param isHtmxRequest if the request is from HTMX
-     * @return render page
+     * @param model model pro frontend data
+     * @param isHtmxRequest true pokud se jedná o HTMX požadavek
+     * @return render stránky se seznamem zájezdů, buď jako část stránky pro HTMX, nebo jako celá stránka s layoutem
      */
     @GetMapping
     public String listTours(Model model, @RequestHeader(value = "HX-Request", required = false) boolean isHtmxRequest) {
