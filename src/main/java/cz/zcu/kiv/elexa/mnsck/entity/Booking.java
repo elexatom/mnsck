@@ -107,7 +107,7 @@ public class Booking {
 
     /**
      * Metoda pro zpracování platby za rezervaci.
-     * 
+     *
      * @param amount částka, kterou zákazník platí. Tato částka je přidána k existujícím platbám a aktualizuje stav rezervace podle logiky definované v jednotlivých stavech.
      */
     public void pay(double amount) {
@@ -125,8 +125,8 @@ public class Booking {
 
     /**
      * Metoda pro nastavení stavu rezervace. Tato metoda aktualizuje current_status a synchronizuje status_string s názvem stavu.
-     * 
-     * @param status nový stav rezervace, který bude nastaven. 
+     *
+     * @param status nový stav rezervace, který bude nastaven.
      */
     public void setStatus(BookingState status) {
         this.current_status = status;
@@ -135,21 +135,11 @@ public class Booking {
 
     /**
      * Metoda pro získání celkové částky zaplacené za rezervaci.
-     * 
+     *
      * @return celková částka zaplacená za rezervaci.
      */
     public double getAmountPaid() {
         if (this.payments == null) return 0.0;
         return this.payments.stream().mapToDouble(Payment::getAmount).sum();
-    }
-
-    /**
-     * Metoda pro získání zbývající částky k zaplacení za rezervaci.
-     * 
-     * @return zbývající částka k zaplacení za rezervaci. Pokud je celková cena rezervace null, považuje se za 0.0. Výsledek je vždy nezáporný (max(0.0, total - amountPaid)).
-     */
-    public double amountRemaining() {
-        double total = this.total_price == null ? 0.0 : this.total_price;
-        return Math.max(0.0, total - getAmountPaid());
     }
 }
