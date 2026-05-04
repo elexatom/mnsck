@@ -1,6 +1,9 @@
 package cz.zcu.kiv.elexa.mnsck.state;
 
 import cz.zcu.kiv.elexa.mnsck.entity.Booking;
+import cz.zcu.kiv.elexa.mnsck.entity.Payment;
+
+import java.time.LocalDate;
 
 /**
  * Stav rezervace, který reprezentuje částečně uhrazenou rezervaci. Implementuje rozhraní BookingState a definuje chování pro akce platby a zrušení.
@@ -16,10 +19,15 @@ public class PartiallyPaidState implements BookingState {
     public void pay(Booking booking, double amount) {
         System.out.println("Processing next payment: " + amount);
 
+        Payment newPayment = new Payment();
+        newPayment.setAmount(amount);
+        newPayment.setPaymentDate(LocalDate.now());
+        newPayment.setBooking(booking);
+        booking.getPayments().add(newPayment);
+
         if (booking.getAmountPaid() >= booking.getTotal_price()) {
             booking.setStatus(new PaidState());
         }
-        // else stay in this state
     }
 
     /**

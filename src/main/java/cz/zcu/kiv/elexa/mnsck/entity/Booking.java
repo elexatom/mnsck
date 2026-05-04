@@ -111,12 +111,6 @@ public class Booking {
      * @param amount částka, kterou zákazník platí. Tato částka je přidána k existujícím platbám a aktualizuje stav rezervace podle logiky definované v jednotlivých stavech.
      */
     public void pay(double amount) {
-        Payment newPayment = new Payment();
-        newPayment.setAmount(amount);
-        newPayment.setPaymentDate(LocalDate.now());
-        newPayment.setBooking(this);
-        this.payments.add(newPayment);
-
         if (this.current_status == null) this.current_status = new WaitingForPaymentState();
         this.current_status.pay(this, amount);
     }

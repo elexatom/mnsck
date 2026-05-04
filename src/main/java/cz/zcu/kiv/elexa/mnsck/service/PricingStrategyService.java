@@ -4,13 +4,12 @@ import cz.zcu.kiv.elexa.mnsck.entity.Customer;
 import cz.zcu.kiv.elexa.mnsck.entity.Tour;
 import cz.zcu.kiv.elexa.mnsck.strategy.DiscountStrategy;
 import cz.zcu.kiv.elexa.mnsck.strategy.DiscountStrategyFactory;
-import cz.zcu.kiv.elexa.mnsck.strategy.PriceCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
  * Služba pro správu strategií cenování. Implementuje strattegy pattern.
- * 
+ *
  * @author Tomáš Elexa
  */
 @Service
@@ -23,18 +22,17 @@ public class PricingStrategyService {
 
     /**
      * Vypočítá konečnou cenu pro zákazníka na základě zvolené strategie.
-     * 
-     * @param customer Zákazník, pro kterého se cena počítá.
-     * @param tour     Zájezd, pro který se cena počítá.
-     * @param fullPrice Cena za plnou cenu.
+     *
+     * @param customer     Zákazník, pro kterého se cena počítá.
+     * @param tour         Zájezd, pro který se cena počítá.
+     * @param fullPrice    Cena za plnou cenu.
      * @param reducedPrice Cena za zlevněnou cenu.
      * @return Konečná cena.
      */
     public double calculatePrice(Customer customer, Tour tour, int fullPrice, int reducedPrice) {
         DiscountStrategy strategy = strategyFactory.createStrategy(customer, tour);
-        PriceCalculator calculator = new PriceCalculator(strategy);
 
-        double finalPrice = calculator.calculateFinal(
+        double finalPrice = strategy.calculateFinal(
                 tour.getPrice_person(),
                 tour.getPrice_person_reduced(),
                 fullPrice,

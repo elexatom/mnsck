@@ -155,7 +155,7 @@
                         <label class="label"><span class="label-text">Doprava</span></label>
                         <select name="transport" class="select select-bordered w-full">
                             <option value="">(Nevybráno)</option>
-                            <option th:each="tr : ${transports}" th:value="${tr.id}" th:text="${tr.type}"></option>
+                            <option th:each="tr : ${transports}" th:value="${tr.transport_id}" th:text="${tr.type}"></option>
                         </select>
                     </div>
                     <div class="form-control w-full">
